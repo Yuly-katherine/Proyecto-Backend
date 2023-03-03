@@ -25,56 +25,56 @@ class CartManager {
     }
   }
 
-  async updateCartId(cart) {
-    if (cart.length === 0) {
+  async updateCartId(carts) {
+    if (carts.length === 0) {
       return 0;
     } else {
-      const ids = products.map((prods) => prods.id);
+      const ids = carts.map((prods) => prods.id);
       let maxIds = Math.max(...ids);
       return maxIds + 1;
     }
   }
 
-  async addCart(products) {
+  async addCart() {
     const carts = await this.getAllCarts();
-    if (!products) {
-      return console.error(
-        "No se estan ingresando los productos"
-      );
-    } else {
-      const newCart = {
-        ...products,
-        id: await this.updateCartId(carts),
-      };
-      const updateCarts = [...carts, newCart];
-        await fs.promises.writeFile(this.#path, JSON.stringify(updateCarts));
-    }
+
+    const newCart = {
+      products: [],
+      id: await this.updateCartId(carts),
+    };
+    const updateCarts = [...carts, newCart];
+    await fs.promises.writeFile(this.#path, JSON.stringify(updateCarts));
+    return updateCarts;
   }
 
 
-  async updateProduct(cartId, productId, newProduct) {
-    const carts = await this.getAllCarts();
-    const cartIndex = carts.findIndex( cart => {
-      return cart.id === cartId;
+  async updateProduct(cartId, newProduct) {
+    const cartById = await this.getCartById(cartId);
+    const productSelected = cartById.products.find(prod => {
+      return prod.id === newProduct.id
     })
-
-    if(cartIndex === -1) {
-      console.error(`El carrito con el ID: ${cartId} no existe`);
-      return {}
-    }
-    
-    const productSelected = carts[cartIndex].products.find(product =>{
-      return product.id === productId;
-    })
-
     if(!productSelected) {
-      carts[cartIndex].products.push(newProduct)
+      cartById.products = [...cartById.products,
+        {
+            id: newProduct.id,
+            quantity: 1
+        }
+      ]
     } else {
-      productSelected.quantity += newProduct.quantity
+      productSelected.quantity ++
     }
-    await fs.promises.writeFile(this.#path, JSON.stringify(carts));
-    
+
+    const carts = await this.getAllCarts();
+    const index = carts.findIndex(el => {
+      return el.id === cartId
+    })
+
+    carts[index] = cartById
+
+    await fs.promises.writeFile(this.#path, JSON.stringify(carts))
+    return carts;
   }
+
 }
 
 export default CartManager;

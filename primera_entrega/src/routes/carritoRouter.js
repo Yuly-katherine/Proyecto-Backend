@@ -1,38 +1,33 @@
 import { Router, json } from 'express';
 import CartManager from '../managers/cart.js';
+import productosRouter from '../managers/productos.js'
 
 const manager = new CartManager();
+const managerProd = new productosRouter();
 const CartsRouter = Router();
 CartsRouter.use(json())
 
 
 CartsRouter.get('/:cid', async(req, res) => {
-    const cartId = Number(req.params.id);
-    const cart = await manager.getCartsById(cartId);
-    res.send(cart);
+    const cartId = Number(req.params.cid);
+    const cartById = await manager.getCartById(cartId);
+    res.status(201).send(cartById);
 })
 
 
 CartsRouter.post('/', async(req, res) => {
-    const carts = await manager.getAllCarts();
-
-    const newCart ={
-        ...req.body,
-        id: await manager.updateCartId(carts),
-    }
-    await manager.addCart(req.body)
-    res.status(201).send(newCart);
+    const updateCart = await manager.addCart()
+    res.status(201).send(updateCart);
 });
 
 
 CartsRouter.post('/:cid/product/:pid', async(req, res) => {
-    const {cid, pid} = req.params
-    const prodId = Number(pid)
-    const cartId = Number(cid)
-    const cartById = await manager.getCartById(cartId);
-    if(!cartById) {
-        return res.status(400).send({error: "El ID ingresado no corresponde a ningun carrito"})
-    }
+    const cartId = Number(req.params.cid);
+    const prodId = Number(req.params.pid);
+    const product = await managerProd.getProductById(prodId);
+    const updateCart = await manager.updateProduct(cartId, product);
+    res.status(201).send(updateCart);
+
 });
 
 
